@@ -15,6 +15,13 @@ spec:
       labels:
         app: vllm-runtime
     spec:
+      # Ensure pod is scheduled on GPU nodes
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
       containers:
       - name: vllm
         image: vllm/vllm-openai:latest
@@ -26,13 +33,17 @@ spec:
           value: "facebook/opt-125m"  # Lightweight model for testing
         - name: MAX_MODEL_LEN
           value: "2048"
+        - name: CUDA_VISIBLE_DEVICES
+          value: "0"
         resources:
           requests:
             memory: "4Gi"
             cpu: "2"
+            nvidia.com/gpu: "1"
           limits:
             memory: "8Gi"
-            cpu: "4"
+            cpu: "2"
+            nvidia.com/gpu: "1"
         command:
         - python3
         - -m

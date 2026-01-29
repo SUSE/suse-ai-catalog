@@ -85,6 +85,11 @@ curl http://localhost:4000/v1/models
 - `vllm-runtime` - GPU optimized LLM runtime
 - `litellm-registry` - Model registry and proxy
 
+**Requirements**:
+- NVIDIA GPU nodes with GPU operator installed
+- Node labels: `nvidia.com/gpu.present=true`
+- At least 1 GPU available per vLLM replica
+
 **Deploy order** (respecting dependencies):
 1. vllm-runtime
 2. litellm-registry (depends on vllm-runtime)
@@ -157,6 +162,29 @@ This happens if the namespace was created manually before Fleet tried to manage 
 **Error: "missing key app.kubernetes.io/managed-by: must be set to Helm"**
 
 Fleet is trying to manage resources as a Helm release. Ensure you don't have standalone `namespace.yaml` files that conflict with Fleet's namespace management.
+
+### GPU Issues
+
+**Error: "Failed to infer device type" or "No CUDA runtime is found"**
+
+vLLM can't detect GPUs. This usually means:
+1. GPU resources aren't requested in the deployment
+2. Pod isn't scheduled on GPU nodes
+3. NVIDIA GPU operator isn't installed or running
+
+**Solution**:
+```bash
+# Check GPU operator is running
+kubectl get pods -n gpu-operator-resources
+
+# Verify GPU nodes are labeled
+kubectl get nodes -l nvidia.com/gpu.present=true
+
+# Check if pod has GPU allocated
+kubectl describe pod -n inference-system -l app=vllm-runtime | grep nvidia.com/gpu
+```
+
+The vLLM deployment requests `nvidia.com/gpu: "1"` and uses a nodeSelector to ensure scheduling on GPU nodes. If your GPU nodes use different labels or taints, adjust `fleet/vllm-runtime/deployment.yaml` accordingly.
 
 ## License
 
