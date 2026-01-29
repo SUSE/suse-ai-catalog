@@ -1,4 +1,4 @@
 defaultNamespace: inference-system
 
 # Fleet will apply all YAML files in this directory
-# in order: namespace, deployment, service
+# Fleet will create the namespace if it doesn't exist

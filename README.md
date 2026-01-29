@@ -9,8 +9,7 @@ A catalog of Fleet-deployable AI/ML stacks with dependency management.
 ├── stacks.yaml          # Catalog of modules and stacks
 ├── fleet/               # Fleet bundles (one per module)
 │   ├── vllm-runtime/
-│   │   ├── fleet.yaml   # Fleet bundle config
-│   │   ├── namespace.yaml
+│   │   ├── fleet.yaml   # Fleet bundle config (includes namespace)
 │   │   ├── deployment.yaml
 │   │   └── service.yaml
 │   └── litellm-registry/
@@ -144,6 +143,20 @@ stacks:
         dependsOn:
           - module-one
 ```
+
+## Troubleshooting
+
+### Fleet Deployment Issues
+
+**Error: "Namespace exists and cannot be imported"**
+
+This happens if the namespace was created manually before Fleet tried to manage it. 
+
+**Solution**: Delete the namespace or ensure the `defaultNamespace` in `fleet.yaml` handles namespace creation. Our bundles let Fleet manage the namespace automatically via `defaultNamespace`.
+
+**Error: "missing key app.kubernetes.io/managed-by: must be set to Helm"**
+
+Fleet is trying to manage resources as a Helm release. Ensure you don't have standalone `namespace.yaml` files that conflict with Fleet's namespace management.
 
 ## License
 
