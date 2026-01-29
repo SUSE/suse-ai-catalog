@@ -1,5 +1,0 @@
-defaultNamespace: inference-system
-
-# Fleet will apply all YAML files in this directory
-# in order: configmap, deployment, service
-# LiteLLM is configured to route traffic to vLLM runtime
