@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: litellm-registry
+  namespace: inference-system
+  labels:
+    app: litellm-registry
+spec:
+  type: ClusterIP
+  selector:
+    app: litellm-registry
+  ports:
+  - name: http
+    port: 4000
+    targetPort: 4000
+    protocol: TCP

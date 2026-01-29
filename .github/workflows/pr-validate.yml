@@ -1,0 +1,72 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate-catalog:
+    name: Validate Catalog Structure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Validate stacks.yaml schema
+        run: |
+          python3 scripts/validate_stacks.py stacks.yaml
+
+      - name: Validate all stacks have valid modules
+        run: |
+          python3 scripts/compute_deploy_order.py stacks.yaml inference-core
+
+  module-sanity:
+    name: Module Sanity Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Validate Kubernetes manifests
+        run: |
+          for module_dir in fleet/*/; do
+            echo "Validating $module_dir"
+            kubectl apply --dry-run=client --recursive -f "$module_dir" || exit 1
+          done
+
+  # TODO: Add EKS cluster creation and stack deployment tests
+  # This would be expanded to actually deploy stacks to a test cluster
+  # stack-deploy:
+  #   name: Deploy Stack (Affected)
+  #   runs-on: ubuntu-latest
+  #   needs: [validate-catalog, module-sanity]
+  #   steps:
+  #     - name: Provision EKS cluster
+  #       run: |
+  #         # eksctl create cluster ...
+  #     
+  #     - name: Deploy inference-core stack
+  #       run: |
+  #         # Deploy modules in order from compute_deploy_order.py
+  #     
+  #     - name: Run smoke tests
+  #       run: |
+  #         # curl endpoints, verify health
+  #     
+  #     - name: Cleanup
+  #       if: always()
+  #       run: |
+  #         # eksctl delete cluster ...

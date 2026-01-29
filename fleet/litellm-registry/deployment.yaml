@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: litellm-registry
+  namespace: inference-system
+  labels:
+    app: litellm-registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: litellm-registry
+  template:
+    metadata:
+      labels:
+        app: litellm-registry
+    spec:
+      containers:
+      - name: litellm
+        image: ghcr.io/berriai/litellm:main-latest
+        ports:
+        - containerPort: 4000
+          name: http
+        env:
+        - name: LITELLM_MASTER_KEY
+          value: "sk-1234"  # Change in production
+        - name: DATABASE_URL
+          value: "sqlite:////app/litellm.db"
+        - name: STORE_MODEL_IN_DB
+          value: "True"
+        volumeMounts:
+        - name: litellm-config
+          mountPath: /app/config.yaml
+          subPath: config.yaml
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2"
+        command:
+        - litellm
+        - --config
+        - /app/config.yaml
+        - --port
+        - "4000"
+        - --num_workers
+        - "4"
+      volumes:
+      - name: litellm-config
+        configMap:
+          name: litellm-config

@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SUSE AI Catalog Stacks",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["modules", "stacks"],
+  "properties": {
+    "modules": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z0-9][a-z0-9-]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/definitions/module"
+      }
+    },
+    "stacks": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z0-9][a-z0-9-]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/definitions/stack"
+      }
+    }
+  },
+  "definitions": {
+    "module": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["displayName", "description", "deploy", "targetNamespace"],
+      "properties": {
+        "displayName": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "targetNamespace": { "type": "string", "minLength": 1 },
+        "deploy": { "$ref": "#/definitions/deploy" }
+      }
+    },
+    "deploy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "enum": ["helm", "kustomize", "yaml"] },
+        "chart": { "type": "string", "minLength": 1 },
+        "repo": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "helm" } } },
+          "then": { "required": ["chart", "repo"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "kustomize" } } },
+          "then": { "required": ["repo", "path"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "yaml" } } },
+          "then": { 
+            "oneOf": [
+              { "required": ["url"] },
+              { "required": ["path"] }
+            ]
+          }
+        }
+      ]
+    },
+    "stack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["displayName", "description", "modules"],
+      "properties": {
+        "displayName": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "category": { "type": "string", "minLength": 1 },
+        "docsURL": { "type": "string", "format": "uri" },
+        "maintainers": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "modules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "dependsOn": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 },
+                "minItems": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
