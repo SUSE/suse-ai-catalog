@@ -24,7 +24,7 @@ spec:
         effect: NoSchedule
       containers:
       - name: vllm
-        image: vllm/vllm-openai:latest
+        image: vllm/vllm-openai:v0.15.1-cu130
         ports:
         - containerPort: 8000
           name: http
@@ -38,11 +38,9 @@ spec:
         resources:
           requests:
             memory: "4Gi"
-            cpu: "2"
             nvidia.com/gpu: "1"
           limits:
             memory: "8Gi"
-            cpu: "2"
             nvidia.com/gpu: "1"
         command:
         - python3
