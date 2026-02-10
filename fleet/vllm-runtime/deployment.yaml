@@ -24,7 +24,7 @@ spec:
         effect: NoSchedule
       containers:
       - name: vllm
-        image: vllm/vllm-openai:v0.15.1-cu130
+        image: vllm/vllm-openai:cu130-nightly-81e217fe6b5a3030aa5c4d859a2125b81979bee4  # BUG in v0.15.1 with cuda 13.0 use nightly build until resolved
         ports:
         - containerPort: 8000
           name: http
