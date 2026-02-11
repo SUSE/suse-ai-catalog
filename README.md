@@ -1,17 +1,46 @@
 # SUSE AI Catalog
 
-Fleet-first catalog of deployable AI modules.
+A Fleet-first catalog of reusable AI modules and ready-to-deploy profiles.
 
-## Recommended Fleet Pattern (Works in Rancher)
+## Design Goals
 
-Use one `GitRepo` per deployment and point `paths` directly to module directories:
+- Keep deploy logic modular and reusable
+- Make Rancher UI workflow simple (choose a path, deploy)
+- Avoid requiring `valuesFiles` input in Rancher UI forms
 
-- `fleet/vllm-runtime`
-- `fleet/litellm-registry`
+## Repository Layout
 
-Set model-specific config in `spec.helm.values` (inline YAML in GitRepo).
+```
+/
+├── stacks.yaml
+├── fleet/
+│   ├── vllm-runtime/                  # Reusable Helm module (chart)
+│   ├── litellm-registry/              # Reusable Helm module (chart)
+│   ├── profiles/                      # UI-friendly deploy bundles
+│   │   ├── vllm-opt-125m/
+│   │   ├── vllm-llama3-8b/
+│   │   ├── vllm-mistral-7b/
+│   │   └── litellm-llama3-mistral/
+│   └── examples/                      # Ready-to-apply GitRepo CRs
+├── docs/
+└── scripts/
+```
 
-This avoids UI limitations around `valuesFiles` and avoids cross-path chart references.
+## Concepts
+
+- **Module**: Reusable implementation (`fleet/vllm-runtime`, `fleet/litellm-registry`)
+- **Profile**: Deployable Fleet bundle with fixed release settings + values (`fleet/profiles/...`)
+- **GitRepo**: Fleet CR that points to a profile path in this repo
+
+## Why Profiles (Fleet Best Practice for Rancher UI)
+
+Rancher UI often does not expose `valuesFiles` cleanly when creating a `GitRepo`.
+Profiles solve this by bundling `fleet.yaml` + `values.yaml` together in a single path.
+
+Users only choose:
+- repo URL
+- branch
+- path (for example `fleet/profiles/vllm-llama3-8b`)
 
 ## Quick Start
 
@@ -21,7 +50,22 @@ This avoids UI limitations around `valuesFiles` and avoids cross-path chart refe
 python3 scripts/validate_stacks.py stacks.yaml
 ```
 
-### 2) Apply example GitRepo resources
+### 2) Deploy with Rancher UI
+
+1. Rancher -> **Continuous Delivery**
+2. Workspace: `fleet-default`
+3. **Git Repos** -> **Create**
+4. Set:
+   - Repo URL: your fork/repo
+   - Branch: `main`
+   - Path: one of:
+     - `fleet/profiles/vllm-opt-125m`
+     - `fleet/profiles/vllm-llama3-8b`
+     - `fleet/profiles/vllm-mistral-7b`
+     - `fleet/profiles/litellm-llama3-mistral`
+5. Save and watch bundle status
+
+### 3) Deploy with GitRepo YAML (`kubectl`)
 
 ```bash
 kubectl apply -f fleet/examples/gitrepo-vllm-opt-125m.yaml
@@ -30,45 +74,51 @@ kubectl apply -f fleet/examples/gitrepo-vllm-mistral.yaml
 kubectl apply -f fleet/examples/gitrepo-litellm-registry.yaml
 ```
 
-### 3) Rancher UI workflow
+## Multi-Model Pattern
 
-If using Rancher UI, create GitRepo and set:
+Recommended rollout order:
 
-- Repo URL
-- Branch
-- Path: `fleet/vllm-runtime` (or `fleet/litellm-registry`)
+1. Deploy one vLLM profile per model backend
+   - `vllm-llama3-8b`
+   - `vllm-mistral-7b`
+2. Deploy LiteLLM profile that proxies aliases to those services
+   - `litellm-llama3-mistral`
 
-Then use **Edit YAML** to add `spec.helm.releaseName` and `spec.helm.values`.
+LiteLLM aliases are defined in:
+- `fleet/profiles/litellm-llama3-mistral/values.yaml`
 
-## Multi-Model Deployment Model
+## Service Names
 
-- Deploy one vLLM GitRepo per model (`releaseName` differs)
-- Deploy one LiteLLM GitRepo with `litellm.modelList` routes to those vLLM services
-
-Example vLLM service names:
+Profile release names produce stable service names:
 
 - `vllm-llama3-vllm-runtime.inference-system.svc.cluster.local:8000`
 - `vllm-mistral-vllm-runtime.inference-system.svc.cluster.local:8000`
+- `litellm-registry-litellm-registry.inference-system.svc.cluster.local:4000`
 
-## Why Not Path-Based Profiles Referencing `../../chart`
+## Security Notes
 
-Fleet can report `no resource found at path` when a selected path is not self-contained as a deployable bundle/chart.
-Cross-directory chart references in profile-only paths are less reliable across environments.
+- LiteLLM master key is sourced from a Kubernetes Secret in chart templates
+- Default values are dev-friendly; use existing Secret in production
+- Pin image tags for production immutability
 
-Module-path GitRepos + inline values are the more robust Fleet pattern.
+## Troubleshooting
 
-## Repository Layout
+### Namespace ownership error
 
+If namespace was created manually before Fleet, Fleet/Helm ownership can conflict.
+Use Fleet-managed namespace creation from bundle settings or recreate the namespace.
+
+### vLLM cannot detect GPU
+
+Check:
+
+```bash
+kubectl get pods -n gpu-operator-resources
+kubectl get nodes -l nvidia.com/gpu.present=true
+kubectl describe pod -n inference-system -l app=vllm-runtime | grep nvidia.com/gpu
 ```
-/
-├── stacks.yaml
-├── fleet/
-│   ├── vllm-runtime/
-│   ├── litellm-registry/
-│   └── examples/
-├── docs/
-└── scripts/
-```
+
+Adjust `nodeSelector`/`tolerations` in profile values if your cluster labels differ.
 
 ## More Docs
 

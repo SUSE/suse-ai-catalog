@@ -7,24 +7,4 @@ spec:
   repo: <your-git-repo-url>
   branch: main
   paths:
-    - fleet/vllm-runtime
-  targetNamespace: inference-system
-  helm:
-    releaseName: vllm-mistral
-    values:
-      model:
-        name: mistralai/Mistral-7B-Instruct-v0.3
-        maxModelLen: 32768
-        trustRemoteCode: false
-      replicaCount: 1
-      resources:
-        requests:
-          memory: 16Gi
-          nvidia.com/gpu: "1"
-        limits:
-          memory: 24Gi
-          nvidia.com/gpu: "1"
-      vllm:
-        extraArgs:
-          - "--dtype=float16"
-          - "--gpu-memory-utilization=0.9"
+    - fleet/profiles/vllm-mistral-7b

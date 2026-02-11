@@ -1,18 +1,44 @@
 # LiteLLM Registry Module
 
-Reusable Fleet/Helm module for proxying model aliases to vLLM backends.
+Reusable Helm chart for LiteLLM proxy and model alias routing.
 
-## Deploy Pattern
+## Role in this Repo
 
-Create a Fleet `GitRepo` pointing to:
+This is a **module**. End users should normally deploy profile bundles in `fleet/profiles/`.
 
-- `fleet/litellm-registry`
+Profile using this module:
 
-Set routes in `spec.helm.values.litellm.modelList`.
+- `fleet/profiles/litellm-llama3-mistral`
 
-Use external secret in production:
+## Creating a New LiteLLM Profile
 
-- `litellm.existingSecretName`
-- `litellm.existingSecretKey`
+1. Copy an existing profile under `fleet/profiles/`
+2. Update `litellm.modelList` aliases and `apiBase` routes
+3. Set production secret reference:
+   - `litellm.existingSecretName`
+   - `litellm.existingSecretKey`
+4. Point Rancher/Fleet GitRepo path at the new profile
 
-See examples in `fleet/examples/`.
+## Security Best Practice
+
+Use an externally managed Secret in production:
+
+```bash
+kubectl create secret generic litellm-master-key \
+  -n inference-system \
+  --from-literal=master-key='replace-with-strong-key'
+```
+
+Then in profile values:
+
+```yaml
+litellm:
+  existingSecretName: litellm-master-key
+  existingSecretKey: master-key
+```
+
+## Optional Local Render Debug
+
+```bash
+helm template test-litellm . -n inference-system
+```
