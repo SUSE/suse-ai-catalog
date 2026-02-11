@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "litellm-registry.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "litellm-registry.name" . }}
+    release: {{ .Release.Name }}
+data:
+  config.yaml: |
+    model_list:
+{{- range .Values.litellm.modelList }}
+      - model_name: {{ .modelName }}
+        litellm_params:
+          model: {{ .providerModel }}
+          api_base: {{ .apiBase }}
+          api_key: {{ .apiKey | quote }}
+{{- end }}

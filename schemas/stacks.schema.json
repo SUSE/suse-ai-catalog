@@ -50,7 +50,13 @@
       "allOf": [
         {
           "if": { "properties": { "type": { "const": "helm" } } },
-          "then": { "required": ["chart", "repo"] }
+          "then": {
+            "required": ["chart"],
+            "oneOf": [
+              { "required": ["repo"] },
+              { "required": ["path"] }
+            ]
+          }
         },
         {
           "if": { "properties": { "type": { "const": "kustomize" } } },

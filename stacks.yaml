@@ -1,17 +1,19 @@
 modules:
   litellm-registry:
     displayName: LiteLLM Registry
-    description: Model registry and proxy for unified LLM access.
+    description: Model registry and proxy for unified LLM access. Templatable Helm chart for mapping model aliases to vLLM backends.
     deploy:
-      type: yaml
+      type: helm
+      chart: litellm-registry
       path: fleet/litellm-registry
     targetNamespace: inference-system
 
   vllm-runtime:
     displayName: vLLM Runtime
-    description: GPU optimized LLM runtime with batching and KV cache.
+    description: GPU optimized LLM runtime with batching and KV cache. Templatable Helm chart for deploying multiple models.
     deploy:
-      type: yaml
+      type: helm
+      chart: vllm-runtime
       path: fleet/vllm-runtime
     targetNamespace: inference-system
 

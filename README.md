@@ -9,14 +9,18 @@ A catalog of Fleet-deployable AI/ML stacks with dependency management.
 ├── stacks.yaml          # Catalog of modules and stacks
 ├── fleet/               # Fleet bundles (one per module)
 │   ├── vllm-runtime/
-│   │   ├── fleet.yaml   # Fleet bundle config (includes namespace)
-│   │   ├── deployment.yaml
-│   │   └── service.yaml
+│   │   ├── fleet.yaml   # Fleet bundle config (Helm-based module)
+│   │   ├── Chart.yaml
+│   │   ├── values.yaml
+│   │   ├── templates/
+│   │   └── examples/
 │   └── litellm-registry/
-│       ├── fleet.yaml
-│       ├── configmap.yaml
-│       ├── deployment.yaml
-│       └── service.yaml
+│       ├── fleet.yaml   # Fleet bundle config (Helm-based module)
+│       ├── Chart.yaml
+│       ├── values.yaml
+│       ├── templates/
+│       └── examples/
+├── fleet/examples/       # Ready-to-apply Fleet GitRepo resources
 ├── schemas/
 │   └── stacks.schema.json
 └── scripts/
@@ -42,7 +46,7 @@ python3 scripts/validate_stacks.py stacks.yaml
 Point Fleet at individual modules:
 
 ```bash
-# Deploy vLLM runtime
+# Deploy vLLM runtime (default model)
 kubectl apply -f - <<EOF
 apiVersion: fleet.cattle.io/v1alpha1
 kind: GitRepo
@@ -54,16 +58,79 @@ spec:
   paths:
   - fleet/vllm-runtime
   targetNamespace: inference-system
+  helm:
+    releaseName: vllm-opt-125m
 EOF
 ```
 
-Or deploy an entire stack by reading `stacks.yaml` and deploying modules in dependency order.
-
-### 3. Test the deployment
+**Deploy multiple models**: Create separate GitRepo resources with different values files:
 
 ```bash
-# Port-forward vLLM
-kubectl port-forward -n inference-system svc/vllm-runtime 8000:8000
+# Deploy Llama 3 8B
+kubectl apply -f - <<EOF
+apiVersion: fleet.cattle.io/v1alpha1
+kind: GitRepo
+metadata:
+  name: vllm-llama3
+  namespace: fleet-default
+spec:
+  repo: <your-git-repo-url>
+  paths:
+  - fleet/vllm-runtime
+  targetNamespace: inference-system
+  helm:
+    releaseName: vllm-llama3
+    valuesFiles:
+    - examples/values-llama3-8b.yaml
+EOF
+```
+
+See [Deploying Multiple Models Guide](docs/deploying-multiple-models.md) for more examples.
+
+Or deploy an entire stack by reading `stacks.yaml` and deploying modules in dependency order.
+
+Example LiteLLM deployment with model routes:
+
+```bash
+kubectl apply -f fleet/examples/gitrepo-litellm-registry.yaml
+```
+
+### 3. Rancher Workflow (UI)
+
+Most teams using Rancher create Fleet `GitRepo` resources from the Rancher UI:
+
+1. Open Rancher and go to **Continuous Delivery**.
+2. Select the Fleet workspace (usually `fleet-default`).
+3. Click **Git Repos** -> **Create**.
+4. Set:
+   - **Repository URL**: your catalog repo URL
+   - **Branch/Revision**: e.g. `main`
+   - **Paths**: e.g. `fleet/vllm-runtime`
+   - **Target Namespace**: `inference-system`
+   - **Helm Release Name**: e.g. `vllm-opt-125m`
+   - **Helm Values Files** (optional): e.g. `examples/values-llama3-8b.yaml`
+5. Set cluster targeting (all clusters, label selectors, or specific clusters).
+6. Save and watch bundle status in the Fleet dashboard.
+
+Rancher then continuously reconciles the deployment from Git.
+
+### 4. GitRepo-as-Code Workflow (`kubectl`)
+
+You can also manage Fleet config declaratively by applying `GitRepo` resources:
+
+```bash
+kubectl apply -f fleet/examples/gitrepo-vllm-opt-125m.yaml
+kubectl apply -f fleet/examples/gitrepo-vllm-llama3.yaml
+kubectl apply -f fleet/examples/gitrepo-litellm-registry.yaml
+```
+
+This applies a `GitRepo` object into `fleet-default` (management cluster), and Fleet deploys to matching target clusters.
+
+### 5. Test the deployment
+
+```bash
+# Port-forward default vLLM release
+kubectl port-forward -n inference-system svc/vllm-opt-125m-vllm-runtime 8000:8000
 
 # Test vLLM
 curl http://localhost:8000/v1/models
@@ -82,7 +149,7 @@ curl http://localhost:4000/v1/models
 **Description**: Baseline model gateway and serving runtime for LLM inference.
 
 **Modules**:
-- `vllm-runtime` - GPU optimized LLM runtime
+- `vllm-runtime` - GPU optimized LLM runtime (Helm chart, templatable)
 - `litellm-registry` - Model registry and proxy
 
 **Requirements**:
@@ -93,6 +160,36 @@ curl http://localhost:4000/v1/models
 **Deploy order** (respecting dependencies):
 1. vllm-runtime
 2. litellm-registry (depends on vllm-runtime)
+
+**Key Features**:
+- Deploy multiple vLLM instances with different models
+- Configurable via Helm values (model, replicas, resources)
+- See [Deploying Multiple Models Guide](docs/deploying-multiple-models.md)
+
+## Deploying Multiple Models
+
+This repo is Fleet-first. To run multiple models, create multiple Fleet `GitRepo` resources that point to `fleet/vllm-runtime` and use different `helm.releaseName` + `helm.valuesFiles`.
+
+Example pattern:
+
+```yaml
+apiVersion: fleet.cattle.io/v1alpha1
+kind: GitRepo
+metadata:
+  name: vllm-mistral
+  namespace: fleet-default
+spec:
+  repo: <your-git-repo-url>
+  paths:
+  - fleet/vllm-runtime
+  targetNamespace: inference-system
+  helm:
+    releaseName: vllm-mistral
+    valuesFiles:
+    - examples/values-mistral-7b.yaml
+```
+
+Each Fleet release gets its own service (for example `vllm-llama3-vllm-runtime` and `vllm-mistral-vllm-runtime`).
 
 ## CI/CD Strategy
 
@@ -184,7 +281,7 @@ kubectl get nodes -l nvidia.com/gpu.present=true
 kubectl describe pod -n inference-system -l app=vllm-runtime | grep nvidia.com/gpu
 ```
 
-The vLLM deployment requests `nvidia.com/gpu: "1"` and uses a nodeSelector to ensure scheduling on GPU nodes. If your GPU nodes use different labels or taints, adjust `fleet/vllm-runtime/deployment.yaml` accordingly.
+The vLLM module requests GPU resources by default in `fleet/vllm-runtime/values.yaml`. If your GPU nodes use different labels or taints, adjust `nodeSelector` and `tolerations` in values files.
 
 ## License
 

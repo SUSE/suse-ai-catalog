@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "litellm-registry.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "litellm-registry.name" . }}
+    release: {{ .Release.Name }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    app: {{ include "litellm-registry.name" . }}
+    release: {{ .Release.Name }}
+  ports:
+  - name: http
+    port: {{ .Values.service.port }}
+    targetPort: {{ .Values.service.port }}
+    protocol: TCP

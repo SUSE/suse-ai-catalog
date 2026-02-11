@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "vllm-runtime.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "vllm-runtime.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "vllm-runtime.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "vllm-runtime.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: vllm
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.service.port }}
+          name: http
+        env:
+        {{- range $key, $value := .Values.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        - name: MODEL_NAME
+          value: {{ .Values.model.name | quote }}
+        - name: MAX_MODEL_LEN
+          value: {{ .Values.model.maxModelLen | quote }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        command:
+        - python3
+        - -m
+        - vllm.entrypoints.openai.api_server
+        - --model
+        - $(MODEL_NAME)
+        - --max-model-len
+        - $(MAX_MODEL_LEN)
+        - --host
+        - "0.0.0.0"
+        - --port
+        - "{{ .Values.service.port }}"
+        {{- if .Values.model.trustRemoteCode }}
+        - --trust-remote-code
+        {{- end }}
+        {{- range .Values.vllm.extraArgs }}
+        - {{ . | quote }}
+        {{- end }}

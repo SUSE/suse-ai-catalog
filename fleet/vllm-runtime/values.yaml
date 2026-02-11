@@ -1,0 +1,63 @@
+# Default values for vllm-runtime
+# Override these when deploying multiple instances with different models
+
+# Model configuration
+model:
+  # Hugging Face model identifier
+  name: "facebook/opt-125m"
+  # Maximum sequence length
+  maxModelLen: 2048
+  # Trust remote code (required for some models)
+  trustRemoteCode: false
+
+# Deployment configuration
+replicaCount: 1
+
+image:
+  repository: vllm/vllm-openai
+  # Use nightly for CUDA 13.0 compatibility
+  tag: "cu130-nightly-81e217fe6b5a3030aa5c4d859a2125b81979bee4"
+  pullPolicy: IfNotPresent
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 8000
+
+# Resource requests and limits
+resources:
+  requests:
+    memory: "4Gi"
+    nvidia.com/gpu: "1"
+  limits:
+    memory: "8Gi"
+    nvidia.com/gpu: "1"
+
+# Node scheduling
+nodeSelector:
+  nvidia.com/gpu.present: "true"
+
+tolerations:
+  - key: nvidia.com/gpu
+    operator: Exists
+    effect: NoSchedule
+
+# vLLM server arguments (passed to api_server)
+vllm:
+  # Additional CLI args for vLLM server
+  extraArgs: []
+  # Example:
+  # extraArgs:
+  #   - "--tensor-parallel-size=2"
+  #   - "--dtype=float16"
+
+# Environment variables
+env:
+  CUDA_VISIBLE_DEVICES: "0"
+  # Add more as needed
+  # HF_TOKEN: ""  # For private models
+
+# Release name will be used as the service name
+# This allows multiple deployments: vllm-llama3, vllm-mistral, etc.
+nameOverride: ""
+fullnameOverride: ""

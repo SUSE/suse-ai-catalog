@@ -1,0 +1,28 @@
+# Example values for Fleet release `vllm-llama3-70b`
+# Reference from Fleet GitRepo:
+#   spec.helm.valuesFiles:
+#     - examples/values-multi-gpu.yaml
+
+model:
+  name: "meta-llama/Meta-Llama-3-70B-Instruct"
+  maxModelLen: 8192
+  trustRemoteCode: false
+
+replicaCount: 1
+
+resources:
+  requests:
+    memory: "80Gi"
+    nvidia.com/gpu: "2"  # Request 2 GPUs
+  limits:
+    memory: "160Gi"
+    nvidia.com/gpu: "2"
+
+vllm:
+  extraArgs:
+    - "--tensor-parallel-size=2"  # Split model across 2 GPUs
+    - "--dtype=float16"
+    - "--max-num-seqs=128"
+
+env:
+  CUDA_VISIBLE_DEVICES: "0,1"

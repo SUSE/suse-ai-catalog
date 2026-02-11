@@ -1,0 +1,14 @@
+apiVersion: v2
+name: vllm-runtime
+description: GPU-optimized LLM runtime with batching and KV cache
+type: application
+version: 0.1.0
+appVersion: "v0.6.3"
+keywords:
+  - llm
+  - inference
+  - gpu
+  - vllm
+maintainers:
+  - name: SUSE AI Platform Team
+    email: platform-ml@suse.com

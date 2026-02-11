@@ -1,5 +1,7 @@
 defaultNamespace: inference-system
 
-# Fleet will apply all YAML files in this directory
-# in order: configmap, deployment, service
-# LiteLLM is configured to route traffic to vLLM runtime
+# This is a Helm-based Fleet module.
+# Configure model proxy routes via values files.
+helm:
+  releaseName: litellm-registry
+  chart: .

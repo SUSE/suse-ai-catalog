@@ -1,0 +1,11 @@
+apiVersion: fleet.cattle.io/v1alpha1
+kind: GitRepo
+metadata:
+  name: litellm-registry
+  namespace: fleet-default
+spec:
+  repo: <your-git-repo-url>
+  branch: main
+  paths:
+    - fleet/litellm-registry
+  targetNamespace: inference-system

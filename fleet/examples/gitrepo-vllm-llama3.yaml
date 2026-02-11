@@ -1,0 +1,15 @@
+apiVersion: fleet.cattle.io/v1alpha1
+kind: GitRepo
+metadata:
+  name: vllm-llama3
+  namespace: fleet-default
+spec:
+  repo: <your-git-repo-url>
+  branch: main
+  paths:
+    - fleet/vllm-runtime
+  targetNamespace: inference-system
+  helm:
+    releaseName: vllm-llama3
+    valuesFiles:
+      - examples/values-llama3-8b.yaml

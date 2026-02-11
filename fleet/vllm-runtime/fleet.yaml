@@ -1,4 +1,10 @@
 defaultNamespace: inference-system
 
-# Fleet will apply all YAML files in this directory
-# Fleet will create the namespace if it doesn't exist
+# This is now a Helm chart
+# Override values.yaml to deploy different models
+helm:
+  releaseName: vllm-opt-125m
+  chart: .
+  # Uncomment to customize:
+  # valuesFiles:
+  #   - values-llama3.yaml

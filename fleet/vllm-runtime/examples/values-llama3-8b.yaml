@@ -1,0 +1,28 @@
+# Example values for Fleet release `vllm-llama3`
+# Reference from Fleet GitRepo:
+#   spec.helm.valuesFiles:
+#     - examples/values-llama3-8b.yaml
+
+model:
+  name: "meta-llama/Meta-Llama-3-8B-Instruct"
+  maxModelLen: 8192
+  trustRemoteCode: false
+
+replicaCount: 2  # Scale to 2 replicas for high availability
+
+resources:
+  requests:
+    memory: "16Gi"
+    nvidia.com/gpu: "1"
+  limits:
+    memory: "32Gi"
+    nvidia.com/gpu: "1"
+
+vllm:
+  extraArgs:
+    - "--dtype=float16"
+    - "--max-num-seqs=256"
+
+# Uncomment if using private model
+# env:
+#   HF_TOKEN: "your-huggingface-token"

@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "litellm-registry.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "litellm-registry.name" . }}
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "litellm-registry.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "litellm-registry.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+      - name: litellm
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.service.port }}
+          name: http
+        env:
+        - name: LITELLM_MASTER_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "litellm-registry.masterSecretName" . }}
+              key: {{ .Values.litellm.existingSecretKey }}
+        - name: DATABASE_URL
+          value: {{ .Values.litellm.databaseUrl | quote }}
+        - name: STORE_MODEL_IN_DB
+          value: {{ .Values.litellm.storeModelInDb | quote }}
+        volumeMounts:
+        - name: litellm-config
+          mountPath: /app/config.yaml
+          subPath: config.yaml
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+        command:
+        - litellm
+        - --config
+        - /app/config.yaml
+        - --port
+        - "{{ .Values.service.port }}"
+        - --num_workers
+        - "{{ .Values.litellm.numWorkers }}"
+      volumes:
+      - name: litellm-config
+        configMap:
+          name: {{ include "litellm-registry.fullname" . }}-config

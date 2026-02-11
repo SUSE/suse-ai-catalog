@@ -1,0 +1,4 @@
+examples/
+*.md
+.git/
+.gitignore

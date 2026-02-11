@@ -1,0 +1,24 @@
+# Example values for Fleet release `vllm-mistral`
+# Reference from Fleet GitRepo:
+#   spec.helm.valuesFiles:
+#     - examples/values-mistral-7b.yaml
+
+model:
+  name: "mistralai/Mistral-7B-Instruct-v0.3"
+  maxModelLen: 32768
+  trustRemoteCode: false
+
+replicaCount: 1
+
+resources:
+  requests:
+    memory: "16Gi"
+    nvidia.com/gpu: "1"
+  limits:
+    memory: "24Gi"
+    nvidia.com/gpu: "1"
+
+vllm:
+  extraArgs:
+    - "--dtype=float16"
+    - "--gpu-memory-utilization=0.9"

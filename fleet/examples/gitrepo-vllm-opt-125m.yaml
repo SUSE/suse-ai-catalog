@@ -1,0 +1,13 @@
+apiVersion: fleet.cattle.io/v1alpha1
+kind: GitRepo
+metadata:
+  name: vllm-opt-125m
+  namespace: fleet-default
+spec:
+  repo: <your-git-repo-url>
+  branch: main
+  paths:
+    - fleet/vllm-runtime
+  targetNamespace: inference-system
+  helm:
+    releaseName: vllm-opt-125m
