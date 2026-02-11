@@ -1,64 +1,27 @@
-# LiteLLM Registry Fleet Module
+# LiteLLM Registry Module
 
-Fleet-managed LiteLLM proxy that routes model aliases to one or more vLLM backends.
+Reusable Helm chart for LiteLLM proxy and model alias routing.
 
-## Purpose
+## Role in this Repo
 
-- Keep vLLM deployments modular (one release per model/backend).
-- Configure proxy routes in LiteLLM with values files.
-- Let users call one LiteLLM endpoint and choose model alias.
+This is a **module**. End users should normally deploy profile bundles in `fleet/profiles/`.
 
-## Fleet Usage
+Profile using this module:
 
-Create a Fleet `GitRepo` that points to this module:
+- `fleet/profiles/litellm-llama3-mistral`
 
-```yaml
-apiVersion: fleet.cattle.io/v1alpha1
-kind: GitRepo
-metadata:
-  name: litellm-registry
-  namespace: fleet-default
-spec:
-  repo: <your-git-repo-url>
-  branch: main
-  paths:
-    - fleet/litellm-registry
-  targetNamespace: inference-system
-  helm:
-    releaseName: litellm-registry
-    valuesFiles:
-      - examples/values-llama3-mistral.yaml
-```
+## Creating a New LiteLLM Profile
 
-## Routing Model Aliases
+1. Copy an existing profile under `fleet/profiles/`
+2. Update `litellm.modelList` aliases and `apiBase` routes
+3. Set production secret reference:
+   - `litellm.existingSecretName`
+   - `litellm.existingSecretKey`
+4. Point Rancher/Fleet GitRepo path at the new profile
 
-Routes are configured in `litellm.modelList`:
+## Security Best Practice
 
-```yaml
-litellm:
-  modelList:
-    - modelName: llama3-8b
-      providerModel: openai/meta-llama/Meta-Llama-3-8B-Instruct
-      apiBase: http://vllm-llama3-vllm-runtime.inference-system.svc.cluster.local:8000/v1
-      apiKey: "dummy"
-```
-
-`modelName` is what clients send to LiteLLM in API requests.
-
-## Secret Management (Best Practice)
-
-By default, the chart creates a Secret for `LITELLM_MASTER_KEY` from
-`litellm.masterKey` so the module works out-of-the-box.
-
-For production, use a pre-created Secret instead:
-
-```yaml
-litellm:
-  existingSecretName: litellm-master-key
-  existingSecretKey: master-key
-```
-
-And create the Secret separately (example):
+Use an externally managed Secret in production:
 
 ```bash
 kubectl create secret generic litellm-master-key \
@@ -66,7 +29,15 @@ kubectl create secret generic litellm-master-key \
   --from-literal=master-key='replace-with-strong-key'
 ```
 
-## Optional Local Debug
+Then in profile values:
+
+```yaml
+litellm:
+  existingSecretName: litellm-master-key
+  existingSecretKey: master-key
+```
+
+## Optional Local Render Debug
 
 ```bash
 helm template test-litellm . -n inference-system

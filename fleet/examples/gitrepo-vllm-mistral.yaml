@@ -1,10 +1,10 @@
 apiVersion: fleet.cattle.io/v1alpha1
 kind: GitRepo
 metadata:
-  name: vllm-llama3
+  name: vllm-mistral
   namespace: fleet-default
 spec:
   repo: <your-git-repo-url>
   branch: main
   paths:
-    - fleet/profiles/vllm-llama3-8b
+    - fleet/profiles/vllm-mistral-7b

@@ -7,7 +7,4 @@ spec:
   repo: <your-git-repo-url>
   branch: main
   paths:
-    - fleet/vllm-runtime
-  targetNamespace: inference-system
-  helm:
-    releaseName: vllm-opt-125m
+    - fleet/profiles/vllm-opt-125m

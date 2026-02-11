@@ -7,5 +7,4 @@ spec:
   repo: <your-git-repo-url>
   branch: main
   paths:
-    - fleet/litellm-registry
-  targetNamespace: inference-system
+    - fleet/profiles/litellm-llama3-mistral
