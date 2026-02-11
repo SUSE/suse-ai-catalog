@@ -7,4 +7,20 @@ spec:
   repo: <your-git-repo-url>
   branch: main
   paths:
-    - fleet/profiles/vllm-opt-125m
+    - fleet/vllm-runtime
+  targetNamespace: inference-system
+  helm:
+    releaseName: vllm-opt-125m
+    values:
+      model:
+        name: facebook/opt-125m
+        maxModelLen: 2048
+        trustRemoteCode: false
+      replicaCount: 1
+      resources:
+        requests:
+          memory: 4Gi
+          nvidia.com/gpu: "1"
+        limits:
+          memory: 8Gi
+          nvidia.com/gpu: "1"

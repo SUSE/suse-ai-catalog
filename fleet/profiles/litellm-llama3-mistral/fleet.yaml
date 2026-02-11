@@ -1,6 +1,0 @@
-defaultNamespace: inference-system
-helm:
-  releaseName: litellm-registry
-  chart: ../../litellm-registry
-  valuesFiles:
-    - values.yaml

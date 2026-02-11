@@ -1,6 +1,0 @@
-defaultNamespace: inference-system
-helm:
-  releaseName: vllm-opt-125m
-  chart: ../../vllm-runtime
-  valuesFiles:
-    - values.yaml

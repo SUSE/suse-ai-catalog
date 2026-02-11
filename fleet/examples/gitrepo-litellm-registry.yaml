@@ -7,4 +7,18 @@ spec:
   repo: <your-git-repo-url>
   branch: main
   paths:
-    - fleet/profiles/litellm-llama3-mistral
+    - fleet/litellm-registry
+  targetNamespace: inference-system
+  helm:
+    releaseName: litellm-registry
+    values:
+      litellm:
+        modelList:
+          - modelName: llama3-8b
+            providerModel: openai/meta-llama/Meta-Llama-3-8B-Instruct
+            apiBase: http://vllm-llama3-vllm-runtime.inference-system.svc.cluster.local:8000/v1
+            apiKey: "dummy"
+          - modelName: mistral-7b
+            providerModel: openai/mistralai/Mistral-7B-Instruct-v0.3
+            apiBase: http://vllm-mistral-vllm-runtime.inference-system.svc.cluster.local:8000/v1
+            apiKey: "dummy"
